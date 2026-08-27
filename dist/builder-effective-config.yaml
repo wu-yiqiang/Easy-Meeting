@@ -1,0 +1,8 @@
+directories:
+  output: dist
+  buildResources: build
+productName: Easy Meeting
+appId: com.EasyMeeting.app
+icon: ./resources/icon.icns
+files: []
+electronVersion: 39.8.10

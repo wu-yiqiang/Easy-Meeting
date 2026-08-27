@@ -1,0 +1,11 @@
+version: 1.0.0
+files:
+  - url: easymetting-1.0.0-arm64-mac.zip
+    sha512: i7lgx0GjXL47Myvs7TIMux3YTsVUSZMl/CKqElwd0IVdLusudXGN0y2GOnZvQ/o5uItMZDBjaoKkpcHkIxziKw==
+    size: 149922268
+  - url: EasyMetting-1.0.0.dmg
+    sha512: N08UGqyyR5K0ABwbPx+461giW7EosVm5HDUM4ty3yv/Q/yFLKvHyG6Onv1BBEFoqWerIbz2nrz2SLLNCtRdMyw==
+    size: 149876143
+path: easymetting-1.0.0-arm64-mac.zip
+sha512: i7lgx0GjXL47Myvs7TIMux3YTsVUSZMl/CKqElwd0IVdLusudXGN0y2GOnZvQ/o5uItMZDBjaoKkpcHkIxziKw==
+releaseDate: '2026-08-27T01:59:05.294Z'
