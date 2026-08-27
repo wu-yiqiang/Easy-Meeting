@@ -25,3 +25,4 @@ TestResults.xml
 .assets/ffmpeg
 .dist/
 .out/
+**/node_modules
