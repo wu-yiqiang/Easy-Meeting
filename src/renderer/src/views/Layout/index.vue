@@ -2,10 +2,25 @@
   <section class="Layout">
     <div class="tabs">
       <el-radio-group v-model="tabPosition">
-        <el-radio-button value="metting">会议</el-radio-button>
-        <el-radio-button value="contact">通讯录</el-radio-button>
-        <el-radio-button value="record">录制</el-radio-button>
-        <el-radio-button value="settings">设置</el-radio-button>
+        <el-radio-button value="metting">
+          <div class="tab-name">会议</div>
+        </el-radio-button>
+        <el-radio-button value="contact">
+                    <div class="tab-name">通讯录</div>
+
+        </el-radio-button>
+        <el-radio-button value="record">
+                              <div class="tab-name">录制</div>
+
+        </el-radio-button>
+        <el-radio-button value="settings">
+                                        <div class="tab-name">设置</div>
+
+        </el-radio-button>
+        <el-radio-button value="user">
+                                        <div class="tab-name">用户</div>
+
+        </el-radio-button>
       </el-radio-group>
     </div>
     <div class="contents">
@@ -13,6 +28,7 @@
       <Record v-if="tabPosition == 'record'" />
       <Contact v-if="tabPosition == 'contact'" />
       <Settings v-if="tabPosition == 'settings'" />
+      <User v-if="tabPosition == 'user'" />
     </div>
   </section>
 </template>
@@ -22,6 +38,7 @@ import Metting from './Metting.vue';
 import Record from '@/views/Record/index.vue'
 import Contact from './Contact.vue';
 import Settings from '@/views/Settings/index.vue';
+import User from '@/views/User/index.vue'
 import { ref } from 'vue'
 const tabPosition = ref('metting')
 </script>
@@ -36,6 +53,10 @@ const tabPosition = ref('metting')
     justify-content: center;
     align-items: center;
     padding: 10px 0;
+    .tab-name {
+    font-size: 16px;
+    font-weight: 600;
+  }
   }
   .demo-tabs > .el-tabs__content {
     padding: 32px;
