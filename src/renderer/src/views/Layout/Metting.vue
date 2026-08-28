@@ -30,11 +30,10 @@ import { Delete, Edit, Search, Share, Upload } from '@element-plus/icons-vue'
   justify-content: center;
   align-items: center;
   .mettingBox {
-    width: 300px;
-    height: 300px;
     display: grid;
     place-items: center;
     grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
     .addmetting {
       padding: 14px;
       border-radius: 4px;

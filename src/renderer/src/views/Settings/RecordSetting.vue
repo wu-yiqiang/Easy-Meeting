@@ -11,7 +11,7 @@
         <el-form-item label="扬声器" class="custom-bold-label">
           
         </el-form-item> -->
-        <el-form-item label="文件录制地址" class="custom-bold-label">
+        <el-form-item label="文件录制保存地址" class="custom-bold-label">
           <el-input v-model="settings.fileSavePath" placeholder="请输入文件保存路径" />
         </el-form-item>
       </el-form>
@@ -24,7 +24,7 @@ const settings = ref({
   autoOpenCamera: false,
   autoOpenMicro: false,
   mode: 'auto',
-  fileSavePath: '/home/sutter/download'
+  fileSavePath: '/Users/atlas/.easymeeting/'
 })
 </script>
 <style scoped>

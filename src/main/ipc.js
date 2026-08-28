@@ -1,6 +1,7 @@
 import { desktopCapturer, ipc, ipcMain } from 'electron'
 import { getWindow } from './windowProxy'
-import {initWs} from './wsClient'
+import { initWs } from './wsClient'
+import { startRecording, stopRecording } from './record.js'
 export const onLoginOrRegister = () => {
   ipcMain.handle('loginOrRegister', (e, isLogin) => {
     const login_width = 375
@@ -32,7 +33,6 @@ export const onLoginSuccess = () => {
 export const onGetScreenSource = () => {
   ipcMain.handle('getScreenSource', async (event, opts) => {
     const sources = await desktopCapturer.getSources(opts)
-    console.log('萨达萨达', sources)
     return sources
       .filter((source) => {
         const size = source.thumbnail.getSize()
@@ -48,19 +48,14 @@ export const onGetScreenSource = () => {
 }
 
 export const onStartRecording = () => {
-  ipcMain.handle('startRecording', async (event, opts) => {
-    // const sources = await desktopCapturer.getSources(opts)
-    // console.log('sdsdsds')
-    // return sources
-    //   .filter((source) => {
-    //     const size = source.thumbnail.getSize()
-    //     return size.width > 10 && size.height > 10
-    //   })
-    //   .map((source) => ({
-    //     id: source.id,
-    //     name: source.name,
-    //     displayId: source.display_id,
-    //     thumbnail: source.thumbnail.toDataURL()
-    //   }))
+  ipcMain.handle('startRecording', async (event, { displayId, mic }) => {
+    const sender = event?.sender
+    startRecording(sender, displayId, mic)
+  })
+}
+
+export const onStopRecording = () => {
+  ipcMain.handle('stopRecording', async (event) => {
+    stopRecording()
   })
 }
