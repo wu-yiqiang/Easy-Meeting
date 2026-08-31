@@ -1,6 +1,6 @@
 <template>
   <section class="VideoThumbnails">
-    <video ref="videoRef" playsinline controls poster>
+    <video ref="videoRef" playsinline controls>
       <source :src="videoStreamUrl" type="video/mp4" />
       您的浏览器不支持 HTML5 视频标签。
     </video>
@@ -11,7 +11,7 @@
           <template #content>
             <el-space direction="vertical" @click.stop>
               <el-button text @click="handleRname">重命名</el-button>
-              <el-button text type="danger" @click="delVisible = true">删除</el-button>
+              <el-button text type="danger" @click="handleDelete">删除</el-button>
             </el-space>
           </template>
           <el-icon><More /></el-icon>
@@ -19,59 +19,16 @@
       </div>
     </div>
   </section>
-
-  <el-dialog v-model="visible" title="重命名" align-center width="300">
-    <el-form
-      ref="renameRef"
-      :rules="rules"
-      :model="dialogForm"
-      label-width="auto"
-      style="max-width: 600px"
-    >
-      <el-form-item label="视频名" prop="fileName">
-        <el-input v-model="dialogForm.fileName" placeholder="请输入" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-space>
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" @click="submitRename">保存</el-button>
-      </el-space>
-    </template>
-  </el-dialog>
-  <el-dialog
-    v-model="delVisible"
-    width="260"
-    align-center
-    title="删除确认"
-  >
-    <span>确认删除 {{ video?.fileName }} 视频吗？</span>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="delVisible = false">取消</el-button>
-        <el-button type="danger" @click="handleDelete(video?.fullPath)">
-          确认
-        </el-button>
-      </div>
-    </template>
-  </el-dialog>
 </template>
 
 <script lang="ts" setup>
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
-import { ElMessage } from 'element-plus'
 import { More } from '@element-plus/icons-vue'
 import { reactive, watch, onUnmounted, ref, onMounted, nextTick, computed } from 'vue'
-const visible = ref(false)
-const renameRef = ref()
 let player: Plyr | null = null
 const videoRef = ref<HTMLVideoElement>()
-const delVisible = ref(false)
-const dialogForm = ref({
-  fileName: ''
-})
-const emits = defineEmits(['update', 'delete'])
+const emits = defineEmits(['update', 'delete', 'rename'])
 const props = defineProps({
   video: {
     type: Object,
@@ -93,7 +50,6 @@ const initPlayer = () => {
         'mute',       
         'fullscreen'
       ],
-      preload: 'metadata',
     })
   }
 }
@@ -112,7 +68,12 @@ const videoStreamUrl = computed(() => {
   const encodedPath = encodeURIComponent(props.video.fullPath);
   return `http://127.0.0.1:${videoPort.value}/${encodedPath}`;
 });
-
+const handleRname = () => {
+  emits('rename', props?.video)
+}
+const handleDelete = () => {
+  emits('delete', props?.video)
+}
 onUnmounted(() => {
   if (player) {
     player.destroy()
@@ -120,59 +81,8 @@ onUnmounted(() => {
   }
 })
 
-// ================= 业务逻辑保持不变 =================
-const rules = reactive({
-  fileName: [{ required: true, message: '视频名必填', trigger: 'blur' }]
-})
 
-const submitRename = () => {
-  renameRef.value.validate(async (valid) => {
-    if (valid) {
-      const oldPath = props.video.fullPath
-      const success = await window.electron.ipcRenderer.invoke('renameFile', {
-        oldPath: oldPath,
-        newPath: dialogForm.value.fileName
-      })
-      if (success) {
-        ElMessage({ message: '文件名修改成功', type: 'success', duration: 2000 })
-        visible.value = false
-        const { fileDir, fileExtend } = await window.electron.ipcRenderer.invoke(
-          'fileInfo',
-          oldPath
-        )
-        const newPath = await window.electron.ipcRenderer.invoke('mergeFilePath', {
-          fileDir,
-          fileName: `${dialogForm.value.fileName}${fileExtend}`
-        })
-        emits('update', {
-          oldFileName: oldPath,
-          path: newPath,
-          fileName: dialogForm.value.fileName
-        })
-        return
-      }
-      ElMessage({ message: '文件名修改失败', type: 'error', duration: 2000 })
-    } else {
-      console.log('error submit!')
-    }
-  })
-}
 
-const handleDelete = async (filePath) => {
-  const success = await window.electron.ipcRenderer.invoke('deleteFile', filePath)
-  if (success) {
-    ElMessage({ message: '文件删除成功', type: 'success', duration: 2000 })
-    delVisible.value = false
-    emits('delete', filePath)
-  } else {
-    ElMessage({ message: '文件删除失败', type: 'error', duration: 2000 })
-  }
-}
-
-const handleRname = () => {
-  dialogForm.value.fileName = props.video.fileName
-  visible.value = true
-}
 </script>
 
 <style lang="scss" scoped>

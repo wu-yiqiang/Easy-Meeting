@@ -23,6 +23,9 @@ importers:
       vue-router:
         specifier: ^5.2.0
         version: 5.2.0(@vue/compiler-sfc@3.5.41)(esbuild@0.28.2)(rollup@4.63.0)(vite@7.3.6(@types/node@26.3.0)(jiti@2.7.0)(sass@1.103.1)(yaml@2.9.0))(vue@3.5.41)
+      vue-virtual-scroller:
+        specifier: ^3.0.5
+        version: 3.0.5(vue@3.5.41)
       ws:
         specifier: 8.18.1
         version: 8.18.1
@@ -2485,6 +2488,11 @@ packages:
         optional: true
       vite:
         optional: true
+
+  vue-virtual-scroller@3.0.5:
+    resolution: {integrity: sha512-5YXD+5DiLOGsngaubXmeNKLYsAnokSMKITT8BqlNIGJ7Pggy8udTg00vKVHZDE5ElPXPdxhTXnJBQqpGnzKAgw==}
+    peerDependencies:
+      vue: ^3.3.0
 
   vue@3.5.41:
     resolution: {integrity: sha512-2laE0p+aK+/AOPG/XL/WepOs/GlK755LJ1XECi9kDUrz1FKNw8rb2Xzlw9JS1rqEV55nb0ttsKxVlTCcd+R5cg==}
@@ -4997,6 +5005,10 @@ snapshots:
       - rollup
       - unloader
       - webpack
+
+  vue-virtual-scroller@3.0.5(vue@3.5.41):
+    dependencies:
+      vue: 3.5.41
 
   vue@3.5.41:
     dependencies:
