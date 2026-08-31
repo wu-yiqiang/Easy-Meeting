@@ -25,23 +25,28 @@
 import Plyr from 'plyr'
 import 'plyr/dist/plyr.css'
 import { More } from '@element-plus/icons-vue'
-import { reactive, watch, onUnmounted, ref, onMounted, nextTick, computed } from 'vue'
-let player: Plyr | null = null
+import { reactive, watch, onUnmounted, ref, onMounted, nextTick, computed, watchEffect } from 'vue'
+const player = ref()
 const videoRef = ref<HTMLVideoElement>()
-const emits = defineEmits(['update', 'delete', 'rename'])
+const emits = defineEmits(['update', 'delete', 'rename', 'play'])
 const props = defineProps({
   video: {
     type: Object,
     required: true,
     default: () => ({})
+  },
+  playFileFullPath: {
+    type: String,
+    required: true,
+    default: ""
   }
 })
 const videoPort = ref<number | null>(null);
 const initPlayer = () => {
   if (videoRef.value) {
     // 如果已经初始化过，先销毁旧的实例
-    if (player) player.destroy()
-    player = new Plyr(videoRef.value, {
+    if (player.value) player.value.destroy()
+    player.value = new Plyr(videoRef.value, {
       controls: [
         // 'play-large', // 居中大播放按钮
         'play',
@@ -51,6 +56,9 @@ const initPlayer = () => {
         'fullscreen'
       ],
     })
+    player.value.on('play', (event) => {
+      emits('play', props.video?.fullPath)
+    });
   }
 }
 
@@ -68,6 +76,15 @@ const videoStreamUrl = computed(() => {
   const encodedPath = encodeURIComponent(props.video.fullPath);
   return `http://127.0.0.1:${videoPort.value}/${encodedPath}`;
 });
+const videoPause = () => {
+  if (player.value) {
+    player.value.pause()
+  }
+}
+watchEffect(() => {
+  if (props.playFileFullPath === props.video?.fullPath) return
+  videoPause()
+})
 const handleRname = () => {
   emits('rename', props?.video)
 }
@@ -75,14 +92,11 @@ const handleDelete = () => {
   emits('delete', props?.video)
 }
 onUnmounted(() => {
-  if (player) {
-    player.destroy()
-    player = null
+  if (player.value) {
+    player.value.destroy()
+    player.value = null
   }
 })
-
-
-
 </script>
 
 <style lang="scss" scoped>

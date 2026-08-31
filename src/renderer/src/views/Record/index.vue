@@ -1,7 +1,7 @@
 <template>
   <section v-if="status == 0" class="Record">
     <div class="video-box">
-      <VideoThumbnails v-for="(video, index) in videos" :key="index" :video="video" @rename="handleUpdate" @delete="handleDelete"/>
+      <VideoThumbnails v-for="(videoTh, index) in videos" :key="videoTh?.fullPath" :video="videoTh" :playFileFullPath="playFileFullPath" @rename="handleUpdate" @delete="handleDelete" @play="handlePlayStatus"/>
     </div>
     <div class="opt-button">
       <el-button type="primary" :icon="CirclePlus" circle size="large" @click="handleCreate" />
@@ -22,6 +22,7 @@ const status = ref(0)
 const videos = ref([])
 const visible = ref(false)
 const delVisible = ref(false)
+const playFileFullPath = ref()
 const video = ref()
 const handleCreate = () => {
   status.value = 1
@@ -33,6 +34,9 @@ const handleBack = () => {
 const handleUpdate = (value) => {
   visible.value = true
   video.value = value
+}
+const handlePlayStatus = (value) => {
+    playFileFullPath.value = value
 }
 const handleDelete = (value) => {
   delVisible.value = true
