@@ -2,6 +2,16 @@ import { desktopCapturer, ipc, ipcMain } from 'electron'
 import { getWindow } from './windowProxy'
 import { initWs } from './wsClient'
 import { startRecording, stopRecording } from './record.js'
+import {
+  getPathVideos,
+  deleteFile,
+  renameFile,
+  getFileInfo,
+  mergeFilePath,
+  getVideoThumbnail,
+  startServer
+} from './file.js'
+let serverStarted = false
 export const onLoginOrRegister = () => {
   ipcMain.handle('loginOrRegister', (e, isLogin) => {
     const login_width = 375
@@ -58,4 +68,49 @@ export const onStopRecording = () => {
   ipcMain.handle('stopRecording', async (event) => {
     stopRecording()
   })
+}
+
+export const onGetPathVideo = () => {
+  ipcMain.handle('getPathVideos', async (event) => {
+    return await getPathVideos()
+  })
+}
+
+export const onDeleteFile = () => {
+  ipcMain.handle('deleteFile', async (event, filePath) => {
+    return await deleteFile(filePath)
+  })
+}
+
+export const onRenameFile = () => {
+  ipcMain.handle('renameFile', async (event, {oldPath, newPath}) => {
+    return await renameFile(oldPath, newPath)
+  })
+}
+
+export const onFileInfo = () => {
+  ipcMain.handle('fileInfo', async (event, path) => {
+    return await getFileInfo(path)
+  })
+}
+
+export const onMergeFilePath = () => {
+  ipcMain.handle('mergeFilePath', async (event, {fileDir, fileName}) => {
+    return await mergeFilePath(fileDir, fileName)
+  })
+}
+
+
+export const onStartServer = () => {
+   ipcMain.handle('getVideoPort', async (event) => {
+     if (serverStarted && globalThis.videoPort) {
+       return globalThis.videoPort
+     }
+     if (!serverStarted) {
+       const port = await startServer()
+       serverStarted = true
+       return port
+     }
+     return null
+   })
 }

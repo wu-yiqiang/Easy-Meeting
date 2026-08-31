@@ -1,12 +1,14 @@
 <!doctype html>
-<html>
+<html class="dark">
   <head>
     <meta charset="UTF-8" />
     <title>Easy Meeting</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';  img-src 'self' data: blob:;
+      media-src 'self' blob: file: http://127.0.0.1:*;
+      connect-src 'self' https://cdn.plyr.io/3.8.4/plyr.svg https://cdn.plyr.io/static/blank.mp4;"
     />
   </head>
 

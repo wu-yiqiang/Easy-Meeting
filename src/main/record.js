@@ -39,7 +39,6 @@ export const startRecording = (_sender, displayId, mic) => {
   sender = _sender
   currentTime = 0
   const platform = process.platform
-
   // ✅ macOS 屏幕录制权限检查
   if (platform === 'darwin') {
     const status = systemPreferences.getMediaAccessStatus('screen')
@@ -224,4 +223,37 @@ const parseTime = (timeStr) => {
     seconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseInt(parts[2].split('.')[0])
   }
   return seconds
+}
+
+export const getVideoThumbnail = (videoPath) => {
+  return new Promise((resolve) => {
+    const ffmpeg = getFFmpegPath()
+    const thumbnailPath = videoPath.replace(/\.[^/.]+$/, '') + '_cover.jpg'
+    const args = [
+      '-i',
+      videoPath, // 输入视频路径
+      '-ss',
+      '00:00:00.1', // 截取 0.1 秒处的画面（避免 0 秒是黑屏）
+      '-vframes',
+      '1', // 只提取 1 帧
+      '-q:v',
+      '2', // 图片质量（2-31，数字越小质量越高）
+      '-y', // 覆盖已存在的同名文件
+      thumbnailPath
+    ]
+    const thumbProcess = spawn(ffmpeg, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    thumbProcess.on('error', (err) => {
+      console.error('FFmpeg 截帧启动失败:', err)
+      resolve({ success: false, error: err.message })
+    })
+    thumbProcess.on('close', (code) => {
+      if (code === 0) {
+        console.log('封面图生成成功:', thumbnailPath)
+        resolve({ success: true, thumbnailPath })
+      } else {
+        console.error('FFmpeg 截帧失败，退出码:', code)
+        resolve({ success: false, error: '截帧失败' })
+      }
+    })
+  })
 }

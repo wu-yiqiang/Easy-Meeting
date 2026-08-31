@@ -8,8 +8,15 @@ import {
   onLoginSuccess,
   onGetScreenSource,
   onStartRecording,
-  onStopRecording
+  onStopRecording,
+  onGetPathVideo,
+  onDeleteFile,
+  onRenameFile,
+  onFileInfo,
+  onMergeFilePath,
+  onStartServer
 } from './ipc'
+import { startServer } from './file.js'
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
@@ -25,7 +32,7 @@ function createWindow() {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
     }
   })
   saveWindow('main', mainWindow)
@@ -53,10 +60,18 @@ onLoginSuccess()
 onGetScreenSource()
 onStartRecording()
 onStopRecording()
+onGetPathVideo()
+onDeleteFile()
+onRenameFile()
+onFileInfo()
+onMergeFilePath()
+onStartServer()
+let serverStarted = false
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.EasyMeeting.app')
 
@@ -67,9 +82,6 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
-
   createWindow()
 
   app.on('activate', function () {
@@ -77,6 +89,13 @@ app.whenReady().then(() => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+  try {
+      const port = await startServer()
+      serverStarted = true;
+      console.log(`✅ 视频服务器已在端口 ${port} 启动`);
+    } catch (error) {
+      console.error('❌ 视频服务器启动失败:', error);
+    }
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common

@@ -1,108 +1,67 @@
 <template>
-  <section v-if="recordStatus == 0" class="Record">
-    <div class="left-pannel">
-      <div class="recorder-setting">
-        <div class="title">录制设置</div>
-        <MicroIcon v-model="micInfo" ref="microRef" @click="toggleMicro" />
-      </div>
-      <div class="start-record">
-        <el-button
-          type="primary"
-          :disabled="!currentScreenDisplayId"
-          @click="startRecord"
-          >开始录制</el-button
-        >
-      </div>
+  <section v-if="status == 0" class="Record">
+    <div class="video-box">
+      <VideoThumbnails v-for="(video, index) in videos" :key="index" :video="video" @delete="handleFileDelete" @update="handleFileUpdate"/>
     </div>
-    <el-divider direction="vertical" />
-    <div class="right-pannel">
-      <ScreenCap v-model:value="currentScreenDisplayId" />
+    <div class="opt-button">
+      <el-button type="primary" :icon="CirclePlus" circle size="large" @click="handleCreate" />
     </div>
   </section>
-  <Recording v-if="recordStatus != 0" :recordTime="recordTime" :status="recordStatus" @stopRecord="stopRecord" @saveVideo="saveVideo"/>
+  <Recorder v-else @back="handleBack" />
 </template>
 <script lang="ts" setup>
-import ScreenCap from './ScreenCap.vue'
-import Recording from './Recording.vue'
+import Recorder from './Recorder.vue'
+import VideoThumbnails from '../../components/VideoThumbnails.vue'
+import { CirclePlus } from '@element-plus/icons-vue'
 import { reactive, watch, computed, ref, onMounted } from 'vue'
-import MicroIcon from '../../components/MicroIcon.vue'
-const currentScreenDisplayId = ref(null)
-const recordTime = ref(1)
-const filePath = ref()
-const microRef = ref()
-const micInfo = ref()
-// 0 初始化 1 开始录制 2 录制中 3 停止录制中 4 停止录制
-const recordStatus = ref(0)
-const startRecord = async () => {
-  recordStatus.value = 1
-  await window.electron.ipcRenderer.invoke('startRecording', {
-    displayId: currentScreenDisplayId.value,
-    mic: micInfo.value?.deviceId
-  })
+const status = ref(0)
+const videos = ref([])
+const handleCreate = () => {
+  status.value = 1
 }
-const stopRecord = async () => {
-  recordStatus.value = 3
-  await window.electron.ipcRenderer.invoke('stopRecording')
-
+const handleBack = () => {
+  status.value = 0
+  getVideos()
 }
-const saveVideo = () => {
-  recordStatus.value = 0
-  recordTime.value = 0
+const handleFileDelete = (filePath) => {
+  videos.value = videos.value.filter((video) => video.fullPath !== filePath)
 }
-
-const listenRecordTime = async () => {
-  await window.electron.ipcRenderer.on('recordTime', (e, _recordTime) => {
-    recordTime.value = _recordTime
-    if (_recordTime >= 1) {
-      recordStatus.value = 2
-    }
-  })
-  await window.electron.ipcRenderer.on('finishRecording', (e, _filePath) => {
-    recordStatus.value = 4
-    filePath.value = _filePath
-  })
+const handleFileUpdate = async ({oldFileName, path, fileName}) => {
+  const {fileExtend } = await window.electron.ipcRenderer.invoke("fileInfo", path)
+  const item = videos.value.find(video => video.fullPath == oldFileName)
+  item.fileName = fileName
+  item.fullName = fileName+fileExtend
+  item.fullPath = path
 }
-
-const toggleMicro = () => {
-  microRef.value.toggleMic()
+const getVideos = async () => {
+  const datas = await window.electron.ipcRenderer.invoke('getPathVideos')
+  console.log(datas)
+  videos.value = datas.sort((a, b) => a.mtime - b.mtime)
 }
-
 onMounted(() => {
-  listenRecordTime()
+  getVideos()
 })
 </script>
-<style scoped>
+<style lang="scss" scoped>
 .Record {
   flex: 1;
   display: flex;
-  overflow: hidden;
+  flex-direction: column;
   justify-content: space-between;
-  .left-pannel {
+  overflow: hidden;
+  .video-box {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    .recorder-setting {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      .title {
-        font-size: 16px;
-      }
-    }
-
-    .start-record {
-      display: grid;
-      place-content: center;
-    }
+    display: grid;
+    overflow: hidden;
+    overflow-y: auto;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    align-content: flex-start; 
+    gap: 20px;
   }
-  .el-divider--vertical {
-    height: 100%;
-  }
-  .right-pannel {
-    flex: 1;
+  .opt-button {
     display: flex;
-    overflow: auto;
+    padding: 10px 0;
+    justify-content: center;
   }
 }
 </style>

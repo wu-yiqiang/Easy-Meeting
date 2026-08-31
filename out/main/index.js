@@ -3,6 +3,8 @@ const electron = require("electron");
 const path$1 = require("path");
 const utils = require("@electron-toolkit/utils");
 const WebSocket = require("ws");
+const fs$1 = require("fs");
+const http = require("http");
 const icon = path$1.join(__dirname, "../../resources/icon.png");
 const windowManage = {};
 const saveWindow = (id, window) => {
@@ -58,12 +60,12 @@ const cleanHeatBeat = () => {
 const fs = require("fs");
 const { spawn } = require("child_process");
 const path = require("path");
-const { app, screen, systemPreferences } = require("electron");
+const { app: app$1, screen, systemPreferences } = require("electron");
 const getResourcePath = () => {
-  if (app.isPackaged) {
+  if (app$1.isPackaged) {
     return process.resourcesPath;
   }
-  return path.join(app.getAppPath(), "resources");
+  return path.join(app$1.getAppPath(), "resources");
 };
 const getFFmpegPath = () => {
   const resourcesPath = getResourcePath();
@@ -251,6 +253,125 @@ const parseTime = (timeStr) => {
   }
   return seconds;
 };
+const { app, BrowserWindow, ipcMain } = require("electron");
+const getPathVideos = async () => {
+  const fileDir = "/Users/atlas/.easymeeting/";
+  try {
+    const files = await fs$1.promises.readdir(fileDir);
+    const fileList = await Promise.all(
+      files.map(async (file) => {
+        const parsedPath = path$1.parse(file);
+        const fullPath = path$1.join(fileDir, file);
+        try {
+          const stats = await fs$1.promises.stat(fullPath);
+          return {
+            fileName: parsedPath.name,
+            // 不带扩展名的文件名
+            ext: parsedPath.ext,
+            // 扩展名（包含点，如 '.mp4'）
+            fullName: file,
+            // 完整的文件名（含扩展名）
+            fullPath,
+            // 文件的绝对路径
+            size: stats.size,
+            // 文件大小（字节）
+            mtime: stats.mtimeMs,
+            // 修改时间戳
+            birthtime: stats.birthtimeMs
+            // 创建时间戳
+          };
+        } catch (err) {
+          console.warn(`无法读取文件信息: ${fullPath}`, err.message);
+          return null;
+        }
+      })
+    );
+    return fileList.filter(Boolean);
+  } catch (error) {
+    console.error("读取目录失败:", error);
+    return [];
+  }
+};
+const deleteFile = (filePath) => {
+  try {
+    fs$1.unlinkSync(filePath);
+    return true;
+  } catch (err) {
+    console.error("删除文件出现错误", err);
+    return false;
+  }
+};
+const renameFile = (oldFilePath, newFilePath) => {
+  try {
+    const { fileDir, fileExtend } = getFileInfo(oldFilePath);
+    const newPath = path$1.join(fileDir, `${newFilePath}${fileExtend}`);
+    if (oldFilePath === newPath) return true;
+    fs$1.renameSync(oldFilePath, newPath);
+    return true;
+  } catch (error) {
+    console.error("重命名失败:", error);
+    return false;
+  }
+};
+const getFileInfo = (filePath) => {
+  try {
+    const dir = path$1.dirname(filePath);
+    const ext = path$1.extname(filePath);
+    const name = path$1.basename(filePath);
+    const fileName = path$1.basename(filePath, ext);
+    return { fileDir: dir, fileExtend: ext, fileName, fullName: name };
+  } catch (error) {
+    return;
+  }
+};
+const mergeFilePath = (fileDir, fileName) => {
+  try {
+    const newPath = path$1.join(fileDir, fileName);
+    return newPath;
+  } catch (error) {
+    return;
+  }
+};
+const startServer = () => {
+  const videoServer = http.createServer((req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    const videoPath = decodeURIComponent(req.url.substring(1));
+    fs$1.stat(videoPath, (err, stats) => {
+      if (err) {
+        res.writeHead(404);
+        return res.end("Video Not Found");
+      }
+      const fileSize = stats.size;
+      const range = req.headers.range;
+      if (range) {
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunkSize = end - start + 1;
+        res.writeHead(206, {
+          "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": chunkSize,
+          "Content-Type": "video/mp4"
+        });
+        fs$1.createReadStream(videoPath, { start, end }).pipe(res);
+      } else {
+        res.writeHead(200, {
+          "Content-Length": fileSize,
+          "Content-Type": "video/mp4",
+          "Accept-Ranges": "bytes"
+        });
+        fs$1.createReadStream(videoPath).pipe(res);
+      }
+    });
+  });
+  videoServer.listen(0, "127.0.0.1", () => {
+    const port = videoServer.address().port;
+    console.log(`🎬 本地视频流服务器已启动: http://127.0.0.1:${port}`);
+    globalThis.videoPort = port;
+  });
+};
+let serverStarted$1 = false;
 const onLoginOrRegister = () => {
   electron.ipcMain.handle("loginOrRegister", (e, isLogin) => {
     const login_width = 375;
@@ -301,6 +422,44 @@ const onStopRecording = () => {
     stopRecording();
   });
 };
+const onGetPathVideo = () => {
+  electron.ipcMain.handle("getPathVideos", async (event) => {
+    return await getPathVideos();
+  });
+};
+const onDeleteFile = () => {
+  electron.ipcMain.handle("deleteFile", async (event, filePath) => {
+    return await deleteFile(filePath);
+  });
+};
+const onRenameFile = () => {
+  electron.ipcMain.handle("renameFile", async (event, { oldPath, newPath }) => {
+    return await renameFile(oldPath, newPath);
+  });
+};
+const onFileInfo = () => {
+  electron.ipcMain.handle("fileInfo", async (event, path2) => {
+    return await getFileInfo(path2);
+  });
+};
+const onMergeFilePath = () => {
+  electron.ipcMain.handle("mergeFilePath", async (event, { fileDir, fileName }) => {
+    return await mergeFilePath(fileDir, fileName);
+  });
+};
+const onStartServer = () => {
+  electron.ipcMain.handle("getVideoPort", async (event) => {
+    if (serverStarted$1 && globalThis.videoPort) {
+      return globalThis.videoPort;
+    }
+    if (!serverStarted$1) {
+      const port = await startServer();
+      serverStarted$1 = true;
+      return port;
+    }
+    return null;
+  });
+};
 function createWindow() {
   const mainWindow = new electron.BrowserWindow({
     width: 375,
@@ -338,16 +497,29 @@ onLoginSuccess();
 onGetScreenSource();
 onStartRecording();
 onStopRecording();
-electron.app.whenReady().then(() => {
+onGetPathVideo();
+onDeleteFile();
+onRenameFile();
+onFileInfo();
+onMergeFilePath();
+onStartServer();
+let serverStarted = false;
+electron.app.whenReady().then(async () => {
   utils.electronApp.setAppUserModelId("com.EasyMeeting.app");
   electron.app.on("browser-window-created", (_, window) => {
     utils.optimizer.watchWindowShortcuts(window);
   });
-  electron.ipcMain.on("ping", () => console.log("pong"));
   createWindow();
   electron.app.on("activate", function() {
     if (electron.BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+  try {
+    const port = await startServer();
+    serverStarted = true;
+    console.log(`✅ 视频服务器已在端口 ${port} 启动`);
+  } catch (error) {
+    console.error("❌ 视频服务器启动失败:", error);
+  }
 });
 electron.app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

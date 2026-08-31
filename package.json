@@ -35,6 +35,7 @@
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "^10.6.2",
+    "plyr": "^3.8.4",
     "prettier": "^3.7.4",
     "sass": "^1.103.1",
     "vite": "^7.2.6",
